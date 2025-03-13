@@ -1,0 +1,2 @@
+Код для uWave модемов.
+hydroacoustics.h, hydroacoustics.cpp - описывают струтктуру и разбор сообщения для модема.
