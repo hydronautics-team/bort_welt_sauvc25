@@ -20,9 +20,9 @@ CS_ROV::CS_ROV(QObject *parent)
     auvProtocol->startExchange();
 
     //РАСКОММЕНТИТЬ В РЕАЛЬНЫХ ТЕСТАХ С ДЖЕТСОНОМ
-//    connect(&timerReceived, &QTimer::timeout, this, &CS_ROV::closeExchangeJetson);
-//    timerReceived.start(1500);
-//    connect(auvProtocol, &ControlSystem::PC_Protocol::dataReceived, this, &CS_ROV::exchangeJetson);
+    connect(&timerReceived, &QTimer::timeout, this, &CS_ROV::closeExchangeJetson);
+    timerReceived.start(1500);
+    connect(auvProtocol, &ControlSystem::PC_Protocol::dataReceived, this, &CS_ROV::exchangeJetson);
 
     connect(&timer, &QTimer::timeout, this, &CS_ROV::tick);
     connect(&timerVMA, &QTimer::timeout, this, &CS_ROV::writeDataToVMA);
@@ -170,23 +170,23 @@ int CS_ROV::sign(double input)
 
 void CS_ROV::readDataFromHighLevel()
 {
-    X[51][0] = K[171];
-    X[52][0] = K[172];
-    X[53][0] = K[173];
-    X[54][0] = K[174];
-    X[55][0] = K[175];
-    X[56][0] = K[176];
+//    X[51][0] = K[171];
+//    X[52][0] = K[172];
+//    X[53][0] = K[173];
+//    X[54][0] = K[174];
+//    X[55][0] = K[175];
+//    X[56][0] = K[176];
 
     //ДЛЯ РЕАЛЬНОГО АППАРАТА раскооментить при обмене с Джетсоном
-//    X[51][0] = auvProtocol->rec_data.controlData.yaw;
-//    X[52][0] = auvProtocol->rec_data.controlData.pitch;
-//    X[53][0] = auvProtocol->rec_data.controlData.roll;
-//    X[54][0] = auvProtocol->rec_data.controlData.surge;
-//    X[55][0] = auvProtocol->rec_data.controlData.sway;
-//    X[56][0] = auvProtocol->rec_data.controlData.depth;
+    X[51][0] = auvProtocol->rec_data.controlData.yaw;
+    X[52][0] = auvProtocol->rec_data.controlData.pitch;
+    X[53][0] = auvProtocol->rec_data.controlData.roll;
+    X[54][0] = auvProtocol->rec_data.controlData.surge;
+    X[55][0] = auvProtocol->rec_data.controlData.sway;
+    X[56][0] = auvProtocol->rec_data.controlData.depth;
 
     // РАСКОММЕНТИРОВАТЬ, когда флаг выставления в 0 имушки будет приходить от Джетсона
-//    flagYawInit = auvProtocol->rec_data.reset_imu;
+    flagYawInit = auvProtocol->rec_data.reset_imu;
 
 //    UservoDrop = K[7];
 //    UservoGrab = K[8];
@@ -195,11 +195,23 @@ void CS_ROV::readDataFromHighLevel()
 //    UservoGrab = auvProtocol->rec_data.servoMotors.grabber;
 }
 
+double CS_ROV::normalizeAngle(double angle) {
+    // Вычисляем остаток от деления на 180
+    angle = fmod(angle, 360.0);
+    // Если результат отрицательный, приводим к положительному диапазону
+    if (angle <= -180.0)
+        angle += 360.0;
+    if (angle > 180.0)
+        angle -= 360.0;
+    // Возвращаем значение обратно в диапазон -180...180
+    return angle;
+}
+
 void CS_ROV::readDataFromSensors()
 {
     X[18][0] = vn100Proto->data.yaw;
 
-    X[61][0] = vn100Proto->data.yaw + X[17][0]; //для сброса в 0 на бортике
+    X[61][0] = normalizeAngle(vn100Proto->data.yaw + X[17][0]); //для сброса в 0 на бортике
     X[62][0] = -vn100Proto->data.pitch;
     X[63][0] = vn100Proto->data.roll;
 
@@ -304,9 +316,9 @@ void CS_ROV::regulators()
 //    alternative_yaw_calculation(dt);
     X[104][0] = K[184]*X[54][0]; //Ux
     X[105][0] = K[185]*X[55][0]; //Uy
-    //qDebug() << "rec_data.controlContoursFlags.stab_yaw: " << auvProtocol->rec_data.controlContoursFlags.stab_yaw;
-//    if (auvProtocol->rec_data.controlContoursFlags.stab_yaw == 0) { //контур курса разомкнут
-  if (K[1] == 0) { //контур курса разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
+    qDebug() << "rec_data.controlContoursFlags.stab_yaw: " << auvProtocol->rec_data.controlContoursFlags.stab_yaw;
+    if (auvProtocol->rec_data.controlContoursFlags.stab_yaw == 0) { //контур курса разомкнут
+//  if (K[1] == 0) { //контур курса разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
         X[101][0] = K[181]*X[51][0]; //Upsi
         contour_closure_yaw = 0;
         resetYawChannel();
@@ -314,10 +326,10 @@ void CS_ROV::regulators()
        contour_closure_yaw = 1;
        controlYaw(dt);
        }
-    //qDebug() << "rec_data.controlContoursFlags.stab_roll: " << auvProtocol->rec_data.controlContoursFlags.stab_roll;
+//    qDebug() << "rec_data.controlContoursFlags.stab_roll: " << auvProtocol->rec_data.controlContoursFlags.stab_roll;
 
-//    if (auvProtocol->rec_data.controlContoursFlags.stab_roll == 0) { //контур крена разомкнут
-    if (K[3] == 0) { //контур крена разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
+    if (auvProtocol->rec_data.controlContoursFlags.stab_roll == 0) { //контур крена разомкнут
+//    if (K[3] == 0) { //контур крена разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
         X[103][0] = K[183]*X[53][0]; //Uroll
         contour_closure_roll = 0;
         resetRollChannel();
@@ -325,10 +337,10 @@ void CS_ROV::regulators()
         contour_closure_roll = 1;
         controlRoll(dt);
     }
-    //qDebug() << "rec_data.controlContoursFlags.stab_pitch: " << auvProtocol->rec_data.controlContoursFlags.stab_pitch;
+//    qDebug() << "rec_data.controlContoursFlags.stab_pitch: " << auvProtocol->rec_data.controlContoursFlags.stab_pitch;
 
-//   if (auvProtocol->rec_data.controlContoursFlags.stab_pitch == 0) {
-    if (K[2] == 0) { //контур дифферента разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
+   if (auvProtocol->rec_data.controlContoursFlags.stab_pitch == 0) {
+//    if (K[2] == 0) { //контур дифферента разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
         X[102][0] = K[182]*X[52][0]; //Upith
         contour_closure_pitch = 0;
         resetPitchChannel();
@@ -336,10 +348,10 @@ void CS_ROV::regulators()
         contour_closure_pitch = 1;
         controlPitch(dt);
     }
-   //qDebug() << "rec_data.controlContoursFlags.stab_depth: " << auvProtocol->rec_data.controlContoursFlags.stab_depth;
+//   qDebug() << "rec_data.controlContoursFlags.stab_depth: " << auvProtocol->rec_data.controlContoursFlags.stab_depth;
 
-//   if (auvProtocol->rec_data.controlContoursFlags.stab_depth == 0) {
-    if (K[4] == 0) { //контур глубины разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
+   if (auvProtocol->rec_data.controlContoursFlags.stab_depth == 0) {
+//    if (K[4] == 0) { //контур глубины разомкнут ДЛЯ ОТЛАДКИ БЕЗ ДЖЕТСОНА
         X[106][0] = K[186]*X[56][0]; //Uz
         contour_closure_depth = 0;
         resetDepthChannel();
@@ -426,7 +438,7 @@ void CS_ROV::controlDepth(double dt)
         X[604][0] = saturation(X[604][0],K[602],K[603]); //выходное значение интегратора с полками
    }
    X[604][1] = X[604][0];
-   qDebug() << "X[604][0]" <<X[604][0];
+//   qDebug() << "X[604][0]" <<X[604][0];
    X[603][1] = X[603][0];
    X[605][0] = X[602][0] + X[604][0];
    X[610][0] = (X[279][0]-X[279][1])/dt; // Дифференцирование
@@ -455,7 +467,7 @@ void CS_ROV::resetPitchChannel()
 
 void CS_ROV::resetDepthChannel()
 {
-    qDebug() << "resetDepthChannel";
+//    qDebug() << "resetDepthChannel";
     X[604][0] = X[604][1] = 0;
 }
 
@@ -556,6 +568,8 @@ void CS_ROV::depth(double dt)
     std::deque<double> tmp_window(window.begin(), window.end());
     std::sort(tmp_window.begin(), tmp_window.end());
     X[279][0] = tmp_window[tmp_window.size() / 2];
+
+//    std::tie(X[279][0], X[610][0]) = i2c->state();
 }
 
 void CS_ROV::aperiodicFilter(double &input, double &output, double &prevOutput, double K, double T, double dt)

@@ -106,10 +106,12 @@ protected:
     double drewYaw = 0;
     double drewYawAuto = 0;
     // РАСКОММЕНТИРОВАТЬ, когда флаг выставления в 0 имушки будет приходить от Джетсона и закомментить следующую строку
-//    bool flagYawInit = false;
-    bool flagYawInit = true;
+    bool flagYawInit = false;
+//    bool flagYawInit = true;
     bool flagYawAuto = false;
     quint8 flag_of_mode = 100;
+
+    double normalizeAngle(double angle);
 
     //для альтернативного метода расчета угла курса
     double A[3][3];  //матрица перехода

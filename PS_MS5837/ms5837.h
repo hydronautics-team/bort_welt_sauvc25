@@ -11,6 +11,7 @@
 #include <QObject>
 #include <QThread>
 #include "linux/i2c.h"
+#include "kf.h"
 
 extern "C" {
     #include <linux/i2c-dev.h>
@@ -80,6 +81,7 @@ public:
      * только жидкости. Используется плотность, установленная для пресной или морской воды.
      */
     double depth();
+    std::pair<double, double> state();
 
     double depth_1 = 0;
     double depth_2 = 0;
@@ -114,6 +116,11 @@ private:
     quint8 sensorChoice = 1; // 1 - 1 sensor, 2 - 2 sensor
     // В классе MS5837 добавить отдельный fd для хаба
     int hubFd = -1;
+    void differentiation(double dt);
+    double dt = 0;
+    QTime time;
+    KalmanFilter kf;
+    Eigen::VectorXd current_state;
 public slots:
     void timeoutSlot();
 signals:

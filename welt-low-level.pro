@@ -21,6 +21,7 @@ SOURCES += \
 
 INCLUDEPATH += /home/isla/rpi/sysroot/usr/include
 INCLUDEPATH += /home/isla/rpi/sysroot/usr/local/include
+INCLUDEPATH += /home/isla/rpi/sysroot/usr/include/eigen3
 LIBS += -L/home/isla/rpi/sysroot/usr/lib -lwiringPi
 LIBS += -L/home/isla/rpi/qt5.15/lib -lQt5Gui -lQt5Network -lQt5SerialPort -lQt5Core
 LIBS += -lGLESv2 -lpthread
@@ -34,6 +35,7 @@ INSTALLS += target
 
 HEADERS += \
     PS_MS5837/ms5837.h \
+    PS_MS5837/kf.h \
     hydroacoustic_peleng/hydroPeleng.h \
     vectorNav/vectorNav.h \
     VMA/vma_controller.h \

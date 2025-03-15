@@ -20,7 +20,7 @@ const uint8_t MS5837_02BA01 = 0x00; // Sensor version: From MS5837_02BA datashee
 const uint8_t MS5837_02BA21 = 0x15; // Sensor version: From MS5837_02BA datasheet Version PROM Word 0
 const uint8_t MS5837_30BA26 = 0x1A; // Sensor version: From MS5837_30BA datasheet Version PROM Word 0
 
-MS5837::MS5837(uint8_t i2cHubAddr, QObject *parent) : hubFd(-1), timerPS(this)
+MS5837::MS5837(uint8_t i2cHubAddr, QObject *parent) : hubFd(-1), timerPS(this), kf(build_depth_sensor_filter()), current_state(Eigen::VectorXd(2))
 {
 
     connect(&timerPS, &QTimer::timeout, this, &MS5837::timeoutSlot);
@@ -252,8 +252,14 @@ double MS5837::depth()
     return (pressure(MS5837::Pa)-102400)/(fluidDensity*9.80665);
 }
 
+std::pair<double, double> MS5837::state()
+{
+    return {current_state(0), current_state(1)};
+}
+
 double MS5837::return_depth_1()
 {
+
     return depth_1;
 }
 
@@ -297,6 +303,25 @@ uint8_t MS5837::crc4(uint16_t n_prom[])
 
 void MS5837::timeoutSlot()
 {
+    dt = time.elapsed()*0.001;//реальный временной шаг цикла
+    X[75][0] = dt;
+    time.start();
     read(fd_0);
-    depth_1 = depth();
+//    differentiation(dt);
+
+//    const double press = pressure();
+//    if (press < 8000 || press < 15000){
+//        return;
+//    }
+//    const double depth = (press-10240)/(88.6*9.80665); //88.6 плотность
+//    Eigen::VectorXd z(1);
+//    z << depth;
+//    kf.update(z, dt);
+//    current_state = kf.get_state();
+}
+
+void MS5837::differentiation(double dt)
+{
+    X[610][0] = (X[279][0]-X[279][1])/dt; // Дифференцирование
+    X[279][1] = X[279][0];
 }
